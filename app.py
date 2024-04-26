@@ -26,7 +26,7 @@ def check_password(text):
 @app.route('/')
 def home():
     with open("database.json","r") as f: data=f.read()
-    return data
+    return f"this is a database.\nto add data, send a post request to the /set page with the key, value, and password.\nto get data, send a get request to the /get page with the key.\nto delete data, send a delete request to /del with the key and password.\n\n{data}"
 
 @app.route("/set",methods=["POST","GET"])
 def set():
