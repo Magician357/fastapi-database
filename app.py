@@ -1,6 +1,8 @@
 from flask import Flask, request
 import json
 import hashlib
+# from time import time
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -13,6 +15,10 @@ def write_json(key, value, filename='database.json'):
         file_data[key]=value
         file.seek(0)
         json.dump(file_data, file, indent = 4)
+
+def log(text):
+    with open("log.txt","a") as f:
+        f.write(f"\n{datetime.now()} {text}")
 
 def check_password(text):
     return encrypt(text) == password
@@ -27,6 +33,7 @@ def set():
     if request.method == "POST":
         if check_password(request.form['password']):
             write_json(request.form['key'],request.form['value'])
+            log(f"Data addition: ({request.form['key']}:{request.form['value']})")
             return {"status":200,"data_recieved":(request.form['key'],request.form['value'])}
         else:
             return {"status":401,"data_recieved":(request.form['key'],request.form['value'])}
@@ -41,7 +48,27 @@ def get():
         data=json.load(f)
     if key not in data:
         return {"status":400,"key":key,"value":""}
+    # log(f"Data got:")
     return {"status":200,"key":key,"value":data[request.form['key']]}
+
+@app.route("/del",methods=["DELETE","GET"])
+def delete():
+    if check_password(request.form['password']):
+        status=200
+        with open("database.json",'r') as file:
+            key =request.form['key']
+            file_data = json.load(file)
+            if key not in file_data: 
+                status=400
+            else: 
+                log(f"Data deleted: ({key}:{file_data[key]})")
+                file_data.pop(key)
+        with open("database.json","w") as file:
+            file.seek(0)
+            json.dump(file_data, file, indent = 4)
+        return {"status":status}
+    else:
+        return {"status":401}
 
 @app.route("/encrypt/<data>")
 def encrypt(data: str):
